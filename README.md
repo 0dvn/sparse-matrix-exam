@@ -46,6 +46,10 @@ Before starting the recursion, we sort the rows by their non-zero count. At each
 
 The position of a row or column in the current minor is calculated by counting how many available rows/columns come before it. We use `Long.bitCount` for this, which is a hardware instruction and runs in O(1).
 
+## Limitations
+
+> **WARNING:** The determinant calculator uses `long` bitmasks to track available rows and columns. A `long` has 64 bits, so the maximum supported matrix size is **64x64**. Matrices larger than 64x64 will produce incorrect results.
+
 ## How to Build and Run
 
 ```
