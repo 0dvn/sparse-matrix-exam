@@ -1,11 +1,13 @@
 package exam;
 
+import java.util.BitSet;
+
 public class DeterminantCalculator {
 
     private double[][][] cache;
     private int[] sortedRows;
-    private long availableRows;
-    private long availableCols;
+    private BitSet availableRows;
+    private BitSet availableCols;
     private int n;
 
     public static double calculate(SparseMatrix matrix) {
@@ -19,8 +21,8 @@ public class DeterminantCalculator {
         for (int i = 0; i < n; i++) {
             cache[i] = matrix.getNonZeroInRow(i);
             if (cache[i] == null) {
-                this.availableRows = 0;
-                this.availableCols = 0;
+                this.availableRows = new BitSet(n);
+                this.availableCols = new BitSet(n);
                 return;
             }
         }
@@ -29,8 +31,10 @@ public class DeterminantCalculator {
         for (int i = 0; i < n; i++) sortedRows[i] = i;
         sortRowsByNonZeroCount(sortedRows, cache);
 
-        this.availableRows = (1L << n) - 1;
-        this.availableCols = (1L << n) - 1;
+        this.availableRows = new BitSet(n);
+        this.availableRows.set(0, n);
+        this.availableCols = new BitSet(n);
+        this.availableCols.set(0, n);
     }
 
     private static void sortRowsByNonZeroCount(int[] arr, double[][][] cache) {
@@ -48,8 +52,8 @@ public class DeterminantCalculator {
 
     private double detRecursive() {
         if (n == 1) {
-            int row = Long.numberOfTrailingZeros(availableRows);
-            int col = Long.numberOfTrailingZeros(availableCols);
+            int row = availableRows.nextSetBit(0);
+            int col = availableCols.nextSetBit(0);
             if (cache[row] != null) {
                 for (double[] element : cache[row]) {
                     if ((int) element[0] == col) return element[1];
@@ -59,30 +63,32 @@ public class DeterminantCalculator {
         }
 
         int pointer = 0;
-        while ((availableRows & (1L << sortedRows[pointer])) == 0) {
+        while (!availableRows.get(sortedRows[pointer])) {
             pointer++;
         }
 
         int bestRow = sortedRows[pointer];
-        long savedRows = availableRows;
-        long savedCols = availableCols;
+        BitSet savedRows = (BitSet) availableRows.clone();
+        BitSet savedCols = (BitSet) availableCols.clone();
         int savedN = n;
 
-        availableRows &= ~(1L << bestRow);
+        availableRows.clear(bestRow);
         n--;
 
-        int posI = Long.bitCount(savedRows & ((1L << bestRow) - 1));
+        int posI = savedRows.get(0, bestRow).cardinality();
 
         double det = 0;
         for (double[] element : cache[bestRow]) {
             int col = (int) element[0];
             double value = element[1];
 
-            if ((savedCols & (1L << col)) != 0) {
-                int posJ = Long.bitCount(savedCols & ((1L << col) - 1));
+            if (savedCols.get(col)) {
+                int posJ = savedCols.get(0, col).cardinality();
                 int sign = ((posI + posJ) % 2 == 0) ? 1 : -1;
 
-                availableCols = savedCols & ~(1L << col);
+                BitSet newCols = (BitSet) savedCols.clone();
+                newCols.clear(col);
+                availableCols = newCols;
 
                 det += sign * value * detRecursive();
             }

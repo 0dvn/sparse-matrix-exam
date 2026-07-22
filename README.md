@@ -36,7 +36,7 @@ The QuadTree is good for transpose but not ideal for Laplace's algorithm. Laplac
 
 ### Bitmask for available rows and columns
 
-Instead of creating new arrays for each minor matrix, we use two `long` bitmasks. One tracks which rows are still available, the other which columns. When we expand along a row and remove a column, we just clear the corresponding bits. This avoids copying data at every recursion level.
+Instead of creating new arrays for each minor matrix, we use two `BitSet` instances. One tracks which rows are still available, the other which columns. When we expand along a row and remove a column, we just clear the corresponding bits. This avoids copying data at every recursion level. `BitSet` supports arbitrary sizes, so there is no matrix size limit.
 
 ### Sorted row selection
 
@@ -44,11 +44,7 @@ Before starting the recursion, we sort the rows by their non-zero count. At each
 
 ### Sign calculation
 
-The position of a row or column in the current minor is calculated by counting how many available rows/columns come before it. We use `Long.bitCount` for this, which is a hardware instruction and runs in O(1).
-
-## Limitations
-
-> **WARNING:** The determinant calculator uses `long` bitmasks to track available rows and columns. A `long` has 64 bits, so the maximum supported matrix size is **64x64**. Matrices larger than 64x64 will produce incorrect results.
+The position of a row or column in the current minor is calculated by counting how many available rows/columns come before it. We use `BitSet.get(0, i).cardinality()` for this.
 
 ## How to Build and Run
 
